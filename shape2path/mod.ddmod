@@ -1,0 +1,8 @@
+{
+	"name": "Shape 2 Path",
+	"unique_id": "Megasploot.Shape2Path",
+	"version": "0.0.1",
+	"author": "Avery Berg",
+	"description": "Adds additional functionality to the select tool. Allows the user to match pattern shapes' shapes to path shapes",
+	"dd_version": "1.1.0.0",
+}
