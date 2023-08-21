@@ -1,0 +1,508 @@
+## Uses Dungeondraft v1.1.0.0
+##
+## Scatter Plus v1.0.0
+## Author: Avery Berg
+## 
+## Adds additional functionality to the scatter tool
+##
+
+# Required Global
+var script_class = "tool"
+
+# External Scripts
+var utils = null
+
+# Globals
+var scatter_tool = null
+var group_note = null
+var group_checkbox = null
+var group_ui_nodes = []
+
+var on_icon = null
+var off_icon = null
+var scatter_group = []
+var in_group_mode = false
+
+var mirror_checkbox = null
+var in_random_mirror_mode = false
+
+var preset_dropdown = null
+var custom_preset_nodes = []
+var save_button = null
+var name_input = null
+var presets_dict = {}
+
+
+var prev_preset = null
+
+
+func random_bool() -> bool:
+    return randi() % 2 == 0
+
+
+# ___________________Preset Functions___________________
+
+func load_presets_dict():
+    var file = File.new()
+    var file_path = self.Global.Root + "data/presets.json"
+
+    # Open the file in read-write mode
+    if file.open(file_path, File.READ_WRITE) == OK:
+        var file_text = file.get_as_text()
+
+        if file_text == "":
+            print("File is empty: " + file_path)
+            return false
+        
+        # Load the JSON data from the file
+        presets_dict = parse_json(file_text)
+
+        # Close the file
+        file.close()
+
+        print("Loaded the ScatterPlus presets")
+        
+        refresh_preset_dropdown()
+
+        return true
+    
+    print("Failed to load the ScatterPlus presets")
+    return false
+
+
+func is_valid_preset_name(name):
+    var stripped_name = name.strip_edges(true, true)
+    if stripped_name and stripped_name != "Custom":
+        return true
+    
+    return false
+
+
+func create_preset(name=null):
+    if not name:
+        name = name_input.get_text()
+        if not is_valid_preset_name(name):
+            return null
+    var preset = {
+        "name": name,
+        "resource_paths": []
+    }
+    for scatter_item in scatter_group:
+        preset["resource_paths"].append(scatter_item.resource_path)
+    return preset
+
+
+func save_preset(preset=null):
+    var file = File.new()
+    var file_path = self.Global.Root + "data/presets.json"
+
+    # Create a preset (if not provided)
+    if not preset:
+        preset = create_preset()
+        if not preset:
+            return
+    var preset_name = preset["name"]
+
+    # Open the file in read-write mode
+    if file.open(file_path, File.READ_WRITE) == OK:
+        print("Opened the file")
+
+        var file_text = file.get_as_text()
+
+        if file_text == "":
+            print("File is empty: " + file_path)
+            return false
+        
+        # Load the JSON data from the file
+        presets_dict = parse_json(file_text)
+        
+        # Add the preset to the file data
+        presets_dict[preset_name] = preset
+
+        # Save the preset to the file
+        file.store_string(to_json(presets_dict))
+
+        # Close the file
+        file.close()
+
+        print("Closed the file")
+
+        refresh_preset_dropdown()
+
+        return true
+    else:
+        print("Failed to open file: " + file_path)
+        return false
+
+
+func load_preset(name):
+    clear_group()
+    if name == "Custom":
+        name_input.set_text(" ")
+        return
+    
+    name_input.set_text(name)
+    for resource_path in presets_dict[name]["resource_paths"]:
+        var new_tx = load(resource_path)
+        add_to_group(new_tx)
+    
+    randomize_asset()
+    print("Loaded preset: " + name)
+
+
+func get_selected_preset():
+    var index = preset_dropdown.get_selected_id()
+
+    if index < preset_dropdown.get_item_count():
+        return preset_dropdown.get_item_text(index)
+    else:
+        print("Index out of range.")
+        return ""
+
+
+func in_custom_preset_mode():
+    if get_selected_preset() == "Custom":
+        return true
+    return false
+
+
+func refresh_preset_dropdown():
+    print("REFRESHING")
+    preset_dropdown.clear()
+    preset_dropdown.add_item("Custom")
+    for key in presets_dict.keys():
+        preset_dropdown.add_item(key)
+
+
+
+# ___________________UI Creation Functions___________________
+
+func create_note(tool_panel, msg):
+    ##
+    ## Create and return a new note node
+    ##
+    tool_panel.CreateNote(msg)
+    return tool_panel.get_children()[-1].get_children()[-1]
+
+
+func create_label(tool_panel, msg):
+    ##
+    ## Create and return a new label node
+    ##
+    tool_panel.CreateLabel(msg)
+    return tool_panel.get_children()[-1].get_children()[-1]
+
+
+func create_separator(tool_panel):
+    ##
+    ## Create and return a new separator node
+    ##
+    tool_panel.CreateSeparator()
+    return tool_panel.get_children()[-1].get_children()[-1]
+
+
+func create_line_edit(tool_panel):
+    ##
+    ## Create and return a new line edit node
+    ##
+    var line_edit = LineEdit.new()
+    tool_panel.get_children()[-1].add_child(line_edit)
+    return tool_panel.get_children()[-1].get_children()[-1]
+
+
+func create_hbox(tool_panel):
+    ##
+    ## Create and return a new line edit node
+    ##
+    var hbox = HBoxContainer.new()
+    tool_panel.get_children()[-1].add_child(hbox)
+    return hbox
+
+
+# ___________________Misc Functions___________________
+
+func load_tx(file_path):
+    ##
+    ## Load a texture from a file path
+    ## Return the texture object
+    ##
+    var image = Image.new()
+    var err = image.load(file_path)
+    if err != OK:
+        print("Unable to load texture from path: '" + str(file_path) + "'")
+        return null
+    
+    var texture = ImageTexture.new()
+    texture.create_from_image(image, 0)
+
+    return texture
+
+
+func add_line_to_note(note_obj, msg):
+    ##
+    ## Add a line of text to a note node
+    ##
+    if note_obj != null:
+        var out_text = note_obj.get_text()
+        out_text += "\n" + str(msg)
+        note_obj.set_text(out_text)
+        return 1
+    return 0
+
+
+func randomize_asset():
+    ##
+    ## Select a random texture from the scatter group and
+    ##   assign it to the scatter tool
+    ##
+    if scatter_group.size() == 0:
+        return
+    
+    var r_index : int = randi() % scatter_group.size()
+    var random_tx = scatter_group[r_index]
+    scatter_tool.Preview.Texture = random_tx
+
+
+func get_split_path(src_path):
+    ##
+    ## Split a load path or resource path by the sep "/"
+    ## Removes "res://" from the path before splitting
+    ##
+    return src_path.split(':')[-1].right(2).split('/')
+
+
+func get_basename(src_path):
+    ##
+    ## Get the basename of a load path or resource path
+    ##
+    var split_path = get_split_path(src_path)
+    if not split_path.size():
+        return ""
+    return split_path[-1]
+    
+
+func get_split_ext(src_path):
+    var split = src_path.split('.')
+    if not split.size() > 1:
+        return [src_path, ""]
+    
+    var ext = split[-1]
+    
+    var left_side = ""
+    for i in range(split.size()-1):
+        left_side = left_side + split[i] + "."
+    
+    left_side = left_side.left(left_side.length()-1)
+    return [left_side, ext]
+
+
+# ___________________Group Mode Functions___________________
+
+func clear_group():
+    ##
+    ## Clear the scatter group
+    ## Clear the text in the group note
+    ##
+    group_note.set_text(" ")
+    scatter_group.clear()
+
+
+func add_to_group(new_texture=null):
+    ##
+    ## Add the current preview texture to the scatter group
+    ##
+
+    # Grab the preview texture if none provided
+    if not new_texture:
+        new_texture = scatter_tool.Preview.Texture
+        if not new_texture:
+            return
+    
+    # Ensure the texture has a resource path
+    if not new_texture.resource_path:
+        return
+    
+    var basename = get_basename(new_texture.resource_path)
+    var texture_name = get_split_ext(basename)[0]
+
+    scatter_group.append(new_texture)
+    add_line_to_note(group_note, "   " + texture_name)
+
+
+func set_group_mode(value):
+    ##
+    ## Set the group mode
+    ## Set the group_checkbox button's icon to reflect the group mode
+    ## Toggle the visibility of the group ui section
+    ## Set or unset the scatter tool's texture
+    ##
+    in_group_mode = value
+
+    # Set the group_checkbox icon
+    if in_group_mode:
+        group_checkbox.icon = on_icon
+    else:
+        group_checkbox.icon = off_icon
+    
+    # Toggle the visibility of the group ui section
+    for ui_node in group_ui_nodes:
+        if ui_node is OptionButton:
+            ui_node.get_parent().visible = in_group_mode
+        ui_node.visible = in_group_mode
+    
+    # Set or unset the scatter tool's texture
+    if in_group_mode:
+        randomize_asset()
+    if not in_group_mode:
+        scatter_tool.Preview.Texture = null
+
+
+# ___________________Callback Functions___________________
+
+func on_select_preset_target(index):
+    print("HELLO WORLD!")
+    # load_preset(get_selected_preset())
+
+
+func on_group_checkbox_click():
+    ##
+    ## Callback function for clicking the group checkbox button
+    ##
+    set_group_mode(!in_group_mode)
+
+
+func on_click_save_button():
+    
+
+
+func start():
+    ##
+    ## Initialize the mod
+    ## Called immediately after the script is loaded
+    ##
+
+    # Cache the scatter tool to make it easier to reference in this script
+    scatter_tool = Global.Editor.Tools["ScatterTool"]
+
+    var tool_panel = Global.Editor.Toolset.GetToolPanel("ScatterTool")
+    on_icon = load_tx(Global.Root + "icons/on.png")
+    off_icon = load_tx(Global.Root + "icons/off.png")
+
+    # Create and add the "Group" checkbox button
+    group_checkbox = tool_panel.CreateButton("Group", Global.Root + "icons/off.png")
+    group_checkbox.connect("pressed", self, "on_group_checkbox_click")
+    tool_panel.Align.move_child(group_checkbox, 0)
+
+    # Create the "Preset" dropdown menu
+    preset_dropdown = tool_panel.CreateLabeledDropdownMenu("on_select_preset_target", "Preset", ["Custom"], "Custom")
+    tool_panel.Align.move_child(tool_panel.get_children()[-1].get_children()[-1], 1)
+    group_ui_nodes.append(preset_dropdown)
+
+    # Create the hbox
+    var hbox = create_hbox(tool_panel)
+    tool_panel.Align.move_child(hbox, 2)
+    group_ui_nodes.append(hbox)
+
+    # Add the group label
+    # var group_label = create_label(tool_panel, "Group:")
+    var group_label = Label.new()
+    group_label.set_text("Name")
+    hbox.add_child(group_label)
+
+    # Create the "Name" line edit
+    name_input = LineEdit.new()
+    name_input.set_custom_minimum_size(Vector2(180, 5))
+    hbox.add_child(name_input)
+
+    # Add the group note
+    group_note = create_note(tool_panel, " ")
+    tool_panel.Align.move_child(group_note, 3)
+    group_ui_nodes.append(group_note)
+
+    # Create and add the "Add to Group" button
+    var add_button = tool_panel.CreateButton("Add to Group", Global.Root + "icons/add.png")
+    add_button.connect("pressed", self, "add_to_group")
+    tool_panel.Align.move_child(add_button, 4)
+    group_ui_nodes.append(add_button)
+
+    # Create and add the "Clear Group" button
+    var clear_button = tool_panel.CreateButton("Clear Group", Global.Root + "icons/trash.png")
+    clear_button.connect("pressed", self, "clear_group")
+    tool_panel.Align.move_child(clear_button, 5)
+    group_ui_nodes.append(clear_button)
+
+    # Create and add the "Save Preset" button
+    save_button = tool_panel.CreateButton("Save as Preset", Global.Root + "icons/scatter_plus.png")
+    save_button.connect("pressed", self, "save_preset")
+    tool_panel.Align.move_child(save_button, 6)
+    # custom_preset_nodes.append(save_button)
+    group_ui_nodes.append(save_button)
+    
+    # Create the separator
+    var sep = create_separator(tool_panel)
+    tool_panel.Align.move_child(sep, 7)
+
+    # Set the group mode to false and hide the group ui section
+    set_group_mode(false)
+
+    # Load the presets
+    load_presets_dict()
+
+    prev_preset = get_selected_preset()
+
+
+func update(delta):
+    ##
+    ## Called once per tick
+    ##
+    var cur_focus = Global.Editor.Toolset.get_focus_owner()
+    var cur_preset = get_selected_preset()
+    
+    if scatter_tool == Global.Editor.ActiveTool:
+        if Input.is_mouse_button_pressed(BUTTON_LEFT) and not cur_focus:
+            if in_group_mode:
+                randomize_asset()
+    
+            # if in_random_mirror_mode:
+            #     scatter_tool.Preview.Mirror = random_bool()
+        
+        if cur_preset != prev_preset:
+            load_preset(cur_preset)
+        
+        prev_preset = cur_preset
+
+
+# ___________________Debug Functions___________________
+
+func dir_string(obj, filter=null):
+    ##
+    ## Get the methods and member variables of an object
+    ## Return as a string
+    ##
+    var str_result = ""
+    var methods = []
+    var properties = []
+
+    # Get the methods
+    for method in obj.get_method_list():
+        if filter == null or filter.to_lower() in method.name.to_lower():
+            methods.append(method.name)
+
+    # Get the member variables
+    for prop in obj.get_property_list():
+        # if prop.type == 3:
+        if filter == null or filter.to_lower() in prop.name.to_lower():
+            properties.append(prop.name)
+
+    methods.sort()
+    properties.sort()
+
+    str_result += "Properties:\n"
+    for prop in properties:
+        str_result += "   " + prop + "\n"
+
+    str_result += "Methods:\n"
+    for method in methods:
+        str_result += "   " + method + "\n"
+
+    return str_result

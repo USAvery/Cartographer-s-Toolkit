@@ -1,0 +1,8 @@
+{
+	"name": "Scatter Plus",
+	"unique_id": "Megasploot.ScatterPlus",
+	"version": "1.2.0",
+	"author": "Avery Berg",
+	"description": "Additional options for the scatter tool",
+	"dd_version": "1.1.0.0",
+}
