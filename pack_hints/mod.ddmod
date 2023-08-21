@@ -1,0 +1,8 @@
+{
+	"name": "Pack Hints",
+	"unique_id": "Megasploot.PackHints",
+	"version": "1.0.0",
+	"author": "Avery Berg",
+	"description": "Upon hovering, displays the source asset pack for an object in the object menu.",
+	"dd_version": "1.1.0.0",
+}
