@@ -8,16 +8,72 @@
 # Required Global
 var script_class = "tool"
 
-
-# ___________________Required Functions___________________
-
-func start():
-    ##
-    ## Initialize the mod
-    ## Called immediately after the script is loaded
-    ##
-    print("Loaded utils")
-    pass
+var all_script_paths = [
+    'res://scripts/framework/Global.cs',
+    'res://scripts/framework/Master.cs',
+    'res://scripts/framework/Camera.cs',
+    'res://scripts/world/World.cs',
+    'res://scripts/framework/GridMesh.cs',
+    'res://scripts/world/WorldUI.cs',
+    'res://scripts/framework/Editor.cs',
+    'res://scripts/ui/Toolset.cs',
+    'res://scripts/ui/ToolsetButton.cs',
+    'res://scripts/ui/Toolbar.cs',
+    'res://scripts/ui/ToolbarButton.cs',
+    'res://scripts/ui/ToolPanel.cs',
+    'res://scripts/ui/panels/SelectToolPanel.cs',
+    'res://scripts/ui/panels/TextToolPanel.cs',
+    'res://scripts/ui/panels/PrefabToolPanel.cs',
+    'res://scripts/ui/panels/MapWizardPanel.cs',
+    'res://scripts/ui/PreviewContainer.cs',
+    'res://scripts/ui/panels/ObjectLibraryPanel.cs',
+    'res://scripts/ui/elements/GridMenu.cs',
+    'res://scripts/ui/Infobar.cs',
+    'res://scripts/ui/windows/NewWindow.cs',
+    'res://scripts/ui/windows/UnsavedChangesWindow.cs',
+    'res://scripts/ui/windows/TagsBrowser.cs',
+    'res://scripts/ui/elements/CustomList.cs',
+    'res://scripts/ui/windows/TextEditWindow.cs',
+    'res://scripts/ui/windows/NewLevelWindow.cs',
+    'res://scripts/ui/windows/ExportWindow.cs',
+    'res://scripts/ui/windows/PreferencesWindow.cs',
+    'res://scripts/ui/windows/HelpWindow.cs',
+    'res://scripts/ui/windows/CompareLevelsWindow.cs',
+    'res://scripts/ui/windows/ChangeMapSizeWindow.cs',
+    'res://scripts/ui/windows/AssetsWindow.cs',
+    'res://scripts/ui/windows/AssetPackerWindow.cs',
+    'res://scripts/ui/windows/WelcomeWindow.cs',
+    'res://scripts/ui/windows/UpdateWindow.cs',
+    'res://scripts/ui/Draw.cs',
+    'res://scripts/ui/windows/NewTemplateWindow.cs',
+    'res://scripts/ui/windows/MakePrefabWindow.cs',
+    'res://scripts/ui/windows/MapInfoWindow.cs',
+    'res://scripts/ui/windows/TerrainWindow.cs',
+    'res://scripts/ui/panels/PathLibraryPanel.cs',
+    'res://scripts/ui/WarnBox.cs',
+    'res://scripts/ui/windows/ModsWindow.cs',
+    'res://scripts/ui/panels/ModRightsidePanel.cs',
+    'res://scripts/world/Level.cs',
+    'res://scripts/world/FloorTileMap.cs',
+    'res://scripts/world/FloorTileCamera.cs',
+    'res://scripts/world/Terrain.cs',
+    'res://scripts/world/CaveMesh.cs',
+    'res://scripts/world/FloorShapes.cs',
+    'res://scripts/world/WaterMesh.cs',
+    'res://scripts/world/WaterPreMesh.cs',
+    'res://scripts/world/PatternShapes.cs',
+    'res://scripts/world/Pathways.cs',
+    'res://scripts/world/Objects.cs',
+    'res://scripts/world/Walls.cs',
+    'res://scripts/world/Lights.cs',
+    'res://scripts/world/Texts.cs',
+    'res://scripts/world/Roofs.cs',
+    'res://scripts/ui/panels/TagsPanel.cs',
+    'res://scripts/ui/elements/RangeSlider.cs',
+    'res://scripts/ui/elements/MinSlider.cs',
+    'res://scripts/world/objects/Portal.cs',
+    'res://scripts/world/objects/Text.cs'
+]
 
 
 # ___________________UI Creation Functions___________________
@@ -27,7 +83,7 @@ func create_note(tool_panel, msg=""):
     ## Create and return a new note node
     ##
     tool_panel.CreateNote(msg)
-    return tool_panel.get_children()[-1].get_children()[-1]
+    return tool_panel.Align.get_children()[-1]
 
 
 func create_label(tool_panel=null, msg=""):
@@ -36,7 +92,7 @@ func create_label(tool_panel=null, msg=""):
     ##
     if tool_panel:
         tool_panel.CreateLabel(msg)
-        return tool_panel.get_children()[-1].get_children()[-1]
+        return tool_panel.Align.get_children()[-1]
     
     var label = Label.new()
     label.set_text(msg)
@@ -48,7 +104,17 @@ func create_separator(tool_panel):
     ## Create and return a new separator node
     ##
     tool_panel.CreateSeparator()
-    return tool_panel.get_children()[-1].get_children()[-1]
+    return tool_panel.Align.get_children()[-1]
+
+
+func create_spacer(tool_panel, size):
+    ##
+    ## Create and return a new control node with a given minimum size
+    ##
+    var spacer = Control.new()
+    spacer.set_custom_minimum_size(size)
+    tool_panel.Align.add_child(spacer)
+    return spacer
 
 
 func create_line_edit(tool_panel=null):
@@ -57,18 +123,36 @@ func create_line_edit(tool_panel=null):
     ##
     var line_edit = LineEdit.new()
     if tool_panel:
-        tool_panel.get_children()[-1].add_child(line_edit)
+        tool_panel.Align.add_child(line_edit)
     return line_edit
 
 
 func create_hbox(tool_panel=null):
     ##
-    ## Create and return a new line edit node
+    ## Create and return a new HBoxContainer node
     ##
     var hbox = HBoxContainer.new()
+    hbox.set_h_size_flags(3)
     if tool_panel:
-        tool_panel.get_children()[-1].add_child(hbox)
+        tool_panel.Align.add_child(hbox)
     return hbox
+
+
+func create_vbox(parent=null, children=[]):
+    ##
+    ## Create and return a new VBoxContainer node
+    ##
+    var vbox = VBoxContainer.new()
+    vbox.set_h_size_flags(3)
+    vbox.set_v_size_flags(3)
+    
+    if parent:
+        parent.add_child(vbox)
+    
+    for child in children:
+        vbox.add_child(child)
+    
+    return vbox
 
 
 func create_labeled_dropdown(msg="", options=[], selected=null):
@@ -78,14 +162,17 @@ func create_labeled_dropdown(msg="", options=[], selected=null):
 
     # Create the hbox
     var hbox = create_hbox()
+    hbox.set_h_size_flags(3)
 
     # Add the label
     var label = Label.new()
     label.set_text(msg)
+    label.set_h_size_flags(1)
     hbox.add_child(label)
 
     # Create the dropdown menu
     var dropdown = OptionButton.new()
+    dropdown.set_h_size_flags(3)
 
     # Add the specified options
     for option in options:
@@ -99,6 +186,104 @@ func create_labeled_dropdown(msg="", options=[], selected=null):
     hbox.add_child(dropdown)
 
     return dropdown
+
+
+func create_slider(tool_panel=null, value=0.0, min_val=0.0, max_val=1.0, step=0.1):
+    ##
+    ## Create and return a horizontal slider node
+    ## has a spinbox sibling
+    ## contained in an hbox
+    ##
+
+    # Create the hbox
+    var hbox = create_hbox(tool_panel)
+    hbox.set_h_size_flags(3)
+
+    # Create the slider
+    var slider = HSlider.new()
+    slider.set_min(min_val)
+    slider.set_max(max_val)
+    slider.set_step(step)
+    slider.set_value(value)
+    slider.set_h_size_flags(3)
+    slider.set_v_size_flags(4)
+    hbox.add_child(slider)
+
+    # Create the spinbox
+    var spin_box = SpinBox.new()
+    spin_box.set_value(value)
+    spin_box.set_h_size_flags(1)
+    hbox.add_child(spin_box)
+
+    # Connect the slider and spinbox
+    slider.connect("value_changed", spin_box, "set_value")
+    spin_box.connect("value_changed", slider, "set_value")
+
+    return slider
+
+
+func create_file_input(tool_panel):
+    # file selection is special, and emits signals called on_file_selected and on_file_cleared automatically
+    var win_img_filter = "All Images,*.png;*.jpg;*jpeg,PNG (*.png),*.png,JPEG (*.jpg),*.jpg;*jpeg";
+    var osx_img_filter = "jpg,png";
+    var linux_img_filter = "*.jpg *.png";
+    var img_filter = null
+
+    match OS.get_name():
+        "Windows":
+            img_filter = win_img_filter
+        "OSX":
+            img_filter = osx_img_filter
+        "X11":
+            img_filter = linux_img_filter
+    
+    tool_panel.CreateFileSelector("FileSelectorID", img_filter, OS.get_system_dir(OS.SYSTEM_DIR_DESKTOP))
+    return tool_panel.Align.get_children()[-1].get_children()[0]
+
+
+func create_button(text=null, icon_path=null):
+    ##
+    ## Create and return a new Button node
+    ##
+    var button = Button.new()
+    if text:
+        button.set_text(text)
+    
+    if icon_path:
+        button.icon = load_tx(icon_path)
+    
+    return button
+
+
+func create_checkbutton(text=null):
+    ##
+    ## Create and return a new CheckButton node
+    ##
+    var checkbutton = CheckButton.new()
+    if text:
+        checkbutton.set_text(text)
+    
+    return checkbutton
+
+
+func create_item_list(tool_panel=null):
+    ##
+    ## Create and return a new item list node
+    ##
+    var item_list = ItemList.new()
+    item_list.set_fixed_icon_size(Vector2(32, 32))
+    item_list.set_h_size_flags(3)
+    item_list.set_v_size_flags(3)
+    item_list.set_max_columns(32)
+    item_list.add_color_override("guide_color", Color(0, 0, 0, 0.12549))
+    item_list.set("custom_constants/vseparation", 4)
+    item_list.set("custom_constants/line_separation", 0)
+    item_list.set("custom_constants/hseparation", 4)
+    item_list.set_custom_minimum_size(Vector2(100, 100))
+
+    if tool_panel:
+        tool_panel.Align.add_child(item_list)
+    return item_list
 
 
 # ___________________Misc Functions___________________
@@ -118,6 +303,52 @@ func load_tx(file_path):
     texture.create_from_image(image, 0)
 
     return texture
+
+
+func load_shader(path):
+    ##
+    ## Load a shader from a path
+    ##
+    
+    # Open the file for reading
+    var file = File.new()
+    if file.open(path, File.READ) != OK:
+        print("Failed to open the file: " + path)
+        return
+    
+    var shader_code = file.get_as_text()
+    
+    # Close the file
+    file.close()
+    
+    var shader = Shader.new()
+    shader.set_code(shader_code)
+    
+    return shader
+
+
+func save_txt(txt, path):
+    ##
+    ## Save txt to a file
+    ##
+
+    # Open the file for writing
+    var file = File.new()
+    if file.open(path, File.WRITE) != OK:
+        print("Failed to open file: " + path)
+        return false
+    
+    print("Opened the file")
+
+    # Save the presets dictionary to the file
+    file.store_string(str(txt))
+
+    # Close the file
+    file.close()
+
+    print("Saved the file")
+
+    return true
 
 
 func add_line_to_note(note_obj, msg):
@@ -158,6 +389,17 @@ func get_attr_safe(obj, attr_name):
         return null
 
 
+func get_asset_pack_name_from_id(pack_id):
+    ##
+    ## Get the name of an asset pack from it's id
+    ##
+    for asset_pack in _global.Header.get_AssetManifest():
+        if asset_pack.get_ID() == pack_id:
+            return asset_pack.get_Name()
+    
+    return null
+
+
 # ___________________Path Functions___________________
 
 func get_split_path(src_path):
@@ -193,6 +435,46 @@ func get_split_ext(src_path):
     return [left_side, ext]
 
 
+func array_join(list, sep=" "):
+    var list_str = ""
+    for item in list:
+        list_str += str(item) + sep
+    
+    if list.size():
+        list_str = list_str.left(list_str.length()-sep.length())
+
+    return list_str
+
+
+func get_pack_id_from_res_path(res_path):
+    ##
+    ## Get the id of an asset pack from an object's resource path
+    ##
+    var split_path = res_path.split(':')[-1].right(2).split('/')
+    if not split_path.size() or split_path[0] != "packs":
+        return null
+    
+    return split_path[1]
+
+
+# ___________________Debug Functions___________________
+
+func print_ancestors(obj, depth=0):
+    if not obj:
+        return
+    
+    if depth:
+        print("   " + str(obj))
+    else:
+        print("Ancestors of " + str(obj))
+
+    # Recurse
+    print_ancestors(obj.get_parent(), depth+1)
+
+    if not depth:
+        print(" ")
+
+
 func get_method_info(method: Dictionary):
     ##
     ## Parse the method dictionary
@@ -219,17 +501,6 @@ func get_method_info(method: Dictionary):
     return method_info
 
 
-func array_join(list, sep=" "):
-    var list_str = ""
-    for item in list:
-        list_str += str(item) + sep
-    
-    if list.size():
-        list_str = list_str.left(list_str.length()-sep.length())
-
-    return list_str
-
-
 func get_method_info_string(method: Dictionary):
     var method_info = get_method_info(method)
 
@@ -240,24 +511,6 @@ func get_method_info_string(method: Dictionary):
         info_string += " => " + method_info["return"]
     return info_string
 
-
-# ___________________Debug Functions___________________
-
-func print_ancestors(obj, depth=0):
-    if not obj:
-        return
-    
-    if depth:
-        print("   " + str(obj))
-    else:
-        print("Ancestors of " + str(obj))
-
-    # Recurse
-    print_ancestors(obj.get_parent(), depth+1)
-
-    if not depth:
-        print(" ")
-        
 
 func dir_string(obj, filter=null, show_values=false, show_method_info=false):
     ##
@@ -299,6 +552,74 @@ func dir_string(obj, filter=null, show_values=false, show_method_info=false):
         str_result += "   " + method + "\n"
 
     return str_result
+
+
+func script_dir_string(script, filter=null, show_values=false, show_method_info=false):
+    ##
+    ## Get the methods and member variables of an script
+    ## Return as a string
+    ##
+    var str_result = ""
+    var methods = []
+    var properties = []
+
+    # Get the methods
+    for method in script.get_script_method_list():
+        if filter == null or filter.to_lower() in method.name.to_lower():
+            if show_method_info:
+                methods.append(get_method_info_string(method))
+            else:
+                methods.append(method.name)
+
+    # Get the member variables
+    for prop in script.get_script_property_list():
+        # if prop.type == 3:
+        if filter == null or filter.to_lower() in prop.name.to_lower():
+            var prop_value = script.get(prop.name)
+            if show_values:
+                properties.append(prop.name + ": " + str(prop_value))
+            else:
+                properties.append(prop.name)
+
+    methods.sort()
+    properties.sort()
+
+    str_result += "Properties:\n"
+    for prop in properties:
+        str_result += "   " + prop + "\n"
+
+    str_result += "Methods:\n"
+    for method in methods:
+        str_result += "   " + method + "\n"
+
+    return str_result
+
+
+func search_down(obj, filter=null, camel_only=false, display_ancestors=false):
+    if not obj:
+        return
+
+    var dir_str = dir_string(obj, filter)
+
+    var camel_size = 0
+
+    for line in dir_str.split('\n'):
+        if camel_only and line.to_lower() != line:
+            camel_size += 1
+
+    if not camel_only or camel_size > 3:
+        if dir_str.split('\n').size() > 3:            
+            print('\n---' + str(obj) + '---')
+            for line in dir_str.split('\n'):
+                if camel_only and line.to_lower() == line:
+                    continue
+                print(line)
+            if display_ancestors:
+                print(' ')
+                print_ancestors(obj)
+    
+    for child in obj.get_children():
+        search_down(child, filter, camel_only, display_ancestors)
 
 
 func match_type(numeral: int):
@@ -357,3 +678,20 @@ func match_type(numeral: int):
             return "PoolVector3Array"
         26:
             return "PoolColorArray"
+
+
+# ___________________Base Functions___________________
+
+func init(caller):
+    ##
+    ## Initialize the script
+    ##
+
+    # Assign Global reference
+    _global = caller._global
+    if not _global is Dictionary:
+        _global = caller.Global
+
+
+func start():
+    pass
