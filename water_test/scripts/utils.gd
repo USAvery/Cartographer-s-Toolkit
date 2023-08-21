@@ -371,7 +371,7 @@ func print_ancestors(obj, depth=0):
 
     if not depth:
         print(" ")
-        
+
 
 func dir_string(obj, filter=null, show_values=false, show_method_info=false):
     ##

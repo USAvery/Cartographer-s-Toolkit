@@ -158,7 +158,7 @@ func create_item_list(tool_panel=null):
     if tool_panel:
         tool_panel.Align.add_child(item_list)
     return item_list
-    
+
 
 func create_vbox(parent=null, children=[]):
     ##
