@@ -1,0 +1,8 @@
+{
+	"name": "Image as Terrain",
+	"unique_id": "Megasploot.ImageAsTerrain",
+	"version": "1.0.0",
+	"author": "Avery Berg",
+	"description": "Import an image as the base layer of terrain. Opens up a 'Terrain Baking' workflow when combined with the 'Toggle Layers' mod.",
+	"dd_version": "1.1.0.0",
+}
