@@ -1,0 +1,424 @@
+## Uses Dungeondraft v1.1.0.0
+##
+## Toggle Layers v1.0.0
+## Author: Avery Berg
+## Uses functions from Layers Mod
+## 
+## TODO: Description
+##
+
+# Required Globals
+var script_class = "tool"
+
+# External Scripts
+var utils = null
+var qutils = null
+var class_a = null
+
+var elapsed_time = 0.0
+
+var levels = []
+
+# Globals
+
+# class LayerManager:
+#     var _name: String
+#     var _z_index: int
+#     var _user_editable: bool
+#     var _level
+#     var _objects: Array
+#     var _paths: Array
+#     var _patterns: Array
+#     var _roofs: Array
+#     var _lights: Array
+#     var _portals: Array
+
+#     func _init(name: String, z_index: int, user_editable = true):
+#         _name = name
+#         _user_editable = user_editable
+#         _level = Global.World.levels[Global.World.CurrentLevelId]
+#         _objects = []
+#         _paths = []
+#         _patterns = []
+#         _roofs = []
+#         _lights = []
+#         _portals = []
+    
+#     func get_name() -> String:
+#         return _name
+    
+#     func get_user_editable() -> bool:
+#         return _user_editable
+    
+#     func get_z_index() -> int:
+#         return _z_index
+    
+#     func load_objects():
+#         _objects = []
+        
+#         for obj in _level.Objects.get_children():
+#             if not qutils.get_meta_safe(obj, 'node_id'):
+#                 continue
+#             if int(obj.z_index) == _z_index:
+#                 _objects.append(obj)
+    
+#     func load_paths():
+#         _paths = []
+        
+#         for path in _level.Pathways.get_children():
+#             if not qutils.get_meta_safe(path, 'node_id'):
+#                 continue
+#             if int(path.z_index) == _z_index:
+#                 _paths.append(path)
+    
+#     func load_patterns():
+#         _patterns = []
+
+#         for layer in level.PatternShapes.get_children():
+#             if int(layer.z_index) != _z_index:
+#                 continue
+            
+#             for pattern_shape in layer.get_children():
+#                 if not get_meta_safe(pattern_shape, "node_id"):
+#                     continue
+#                 _patterns.append(pattern_shape)
+
+#     func load_roofs():
+#         _roofs = []
+
+#         if _z_index != 800:
+#             return
+        
+#         for roof in _level.Roofs.get_children():
+#             if not qutils.get_meta_safe(roof, 'node_id'):
+#                 continue
+#             _roofs.append(roof)
+
+#     func load_lights():
+#         _lights = []
+
+#         if _z_index != 9999:
+#             return
+        
+#         for light in _level.Lights.get_children():
+#             if not qutils.get_meta_safe(light, 'node_id'):
+#                 continue
+#             _lights.append(light)
+
+#     func load_portals():
+#         _portals = []
+
+#         if _z_index != 500:
+#             return
+        
+#         for portal in _level.Portals.get_children():
+#             if not qutils.get_meta_safe(portal, 'node_id'):
+#                 continue
+#             _portals.append(portal)
+
+#     func load_all():
+#         load_objects()
+#         load_paths()
+#         load_patterns()
+#         load_roofs()
+#         load_lights()
+#         load_portals()
+
+#     func hide_all():
+#         load_all()
+
+#         for obj in _objects:
+#             obj.visible = false
+        
+#         for path in _paths:
+#             path.visible = false
+        
+#         for pat in _patterns:
+#             pat.visible = false
+        
+#         for roof in _roofs:
+#             roof.visible = false
+        
+#         for light in _lights:
+#             light.visible = false
+        
+#         for portal in _portals:
+#             portal.visible = false
+
+
+func search_down(obj, filter=null, camel_only=false):
+    if not obj:
+        return
+
+    var dir_string = utils.dir_string(obj, filter)
+
+    var camel_size = 0
+
+    for line in dir_string.split('\n'):
+        if camel_only and line.to_lower() != line:
+            camel_size += 1
+
+    if not camel_only or camel_size > 3:
+        if dir_string.split('\n').size() > 3:            
+            print('\n---' + str(obj) + '---')
+            for line in dir_string.split('\n'):
+                if camel_only and line.to_lower() == line:
+                    continue
+                print(line)
+
+    # if 'cam' in str(obj).to_lower():
+    #     utils.print_ancestors(obj)
+    
+    for child in obj.get_children():
+        search_down(child, filter, camel_only)
+
+
+
+
+func _on_reload():
+    print(" ")
+    var level = Global.World.levels[Global.World.CurrentLevelId]
+    var objects = level.Objects.get_children()
+
+    var viewport = Global.Editor.get_viewport()
+    var master = viewport.get_children()[-1]
+    # print(master.get_Exporter())
+    # search_down(viewport, 'export')
+    # print(utils.dir_string(viewport.get_children()[-1], 'exp'))
+    # Global.Editor.print_tree()
+    # print(Master)
+    # Global.Editor.get_viewport().print_tree()
+    var margins = Global.Editor.Windows.Export.get_children()[-1]
+    # print(utils.dir_string(Global.Editor.Windows.Export))
+    # print(Global.Editor.Windows.Export.get_signal_connection_list())
+    var export_button = margins.get_children()[0].get_children()[-1]
+    # 
+    var export_window = Global.Editor.Windows.Export
+    # for line in utils.dir_string(export_window, null, true, true).split('\n'):
+    #     if line.to_lower() != line:
+    #         print(line)
+    # print(utils.dir_string())
+    # for attr in export_window.get_script().get_script_method_list():
+    #     print(attr.name)
+    
+    # for sig in export_button.get_signal_list():
+    #     print(sig.name)
+    #     print(export_button.get_signal_connection_list(sig.name))
+    #     print(' ')
+
+    var tile_cam = level.FloorTileCamera
+    var master_cam = master.get_Camera()
+
+    var vp2d = master.ViewportContainer2D.get_children()[0]
+    
+
+    # Get the main node
+    var main_node = vp2d.get_children()[1]
+
+    # for child in master.Editor.get_children():
+    #     print(child.visible)
+    # print(vp2d.get_children())
+    # print()
+    
+    # Global.Editor.get_node('VPartition').visible = false
+    # Global.Editor.get_node('Floatbar').visible = false
+    # Global.Editor.get_node('Draw').visible = false
+    # Global.Editor.get_node('Preview').visible = false
+    # print(utils.dir_string(viewport, 'rect'))
+    # print(viewport.get_visible_rect())
+    # print(viewport.get_children())
+    # print(master_cam.get_viewport_rect())
+    # var vp_size = viewport.size
+    # var start = Vector2(0.0, 0.0) + (0.5*vp_size)
+    # master_cam.set_global_position(start)
+
+    # print()
+
+    # print(viewport.get_children())
+
+    # print(Global.World.WorldUI)
+
+    # search_down(viewport, 'ui', true)
+
+    # Global.Editor.panels.visible = true
+
+    # var vp2d = master_node.ViewportContainer2D.get_children()[0]
+
+    # var my_img = vp2d.get_texture().get_data()
+    # my_img.convert(Image.FORMAT_RGBA8)
+    # my_img.flip_y()
+    # my_img.save_png('/Users/Avery/Desktop/dd_rip.png')
+    # print(utils.dir_string(viewport, 'size'))
+    # print(utils.dir_string(master_cam, 'zoo'))
+    # print(utils.dir_string(master_cam))
+    # print(utils.dir_string(master_cam))
+    # master_cam.set_zoom(Vector2(1.0, 1.0))
+    # master_cam.SetRawZoom(Vector2(1.0, 1.0), 1.0)
+    # print(master_cam.get_zoom())
+    # 
+    # print(master_cam.get_global_position())
+    # print(tile_cam.get_global_position())
+    print(' ')
+    
+    # print(utils.dir_string(master, 'cam'))
+    # print(viewport.get_camera())
+    # print(utils.dir_string(viewport, 'cam'))
+
+    # print(utils.dir_string(level))
+    # print(export_window.gridPPI)
+    # print(utils.dir_string(export_window, null, true, true))
+
+    # export_window.StartCropping()
+    # export_window.StopCropping()
+
+    # search_down(viewport)
+
+    return
+    for res_path in utils.all_script_paths:
+        if not 'camera' in res_path.to_lower():
+            continue
+        print(' ')
+        print('-------------------------')
+        print(res_path)
+        var script = load(res_path)
+        # print(utils.dir_string(script, 'prop'))
+        # break
+        # print(' ')
+        # print(script.name)
+
+        print('Properties:')
+        for property in script.get_script_property_list():
+            var prop_name = str(property.get('name'))
+            print('   ' + prop_name)
+        # break
+        # print()
+        print('Methods:')
+        for method in script.get_script_method_list():
+            var method_name = str(method.get('name'))
+            print('   ' + method_name)
+        print('-------------------------')
+    # export_window._on_OkayButton_pressed()
+    # print('Stopped')
+    # print(export_window.output.get_text())
+    # print(Script.get_Filename())
+    # print(utils.dir_string(Script, null, true, true))
+
+    # for attr in script.get_script_method_list():
+    #     print(attr.name)
+    # print()
+    # print(utils.dir_string(export_window, null, true))
+    # 
+    # print(export_window.outputPath)
+    # print(export_button.get_signal_connection_list("pressed"))
+    # print(utils.dir_string(master, 'export'))
+    # print(get_node('3662'))
+    # master.print_tree()
+    # Global.Editor._on_ExportButton_pressed()
+    # print(utils.dir_string(Global.Editor, 'exp'))
+    # var editor_script = Global.Editor.get_script()
+    # print()
+    # var new_script = load(editor_script.resource_path)
+    
+    # print(resource_paths)
+    # print(utils.dir_string(new_script))
+    # print(utils.dir_string(new_script, 'code'))
+    # print()
+
+
+    # Order:
+    #   
+    #   
+    #   patterns
+    #   paths
+    #   objects
+    #   
+    #   
+    #   
+    # Have their own layer:
+    #   Roofs
+    #   Lights
+    #   Freestanding Portals
+    #   Walls
+
+    # print(objects)
+    # for a in utils.dir_string(objects[0]).split('\n'):
+    #     if a.to_lower() != a:
+    #         print(a)
+    # print(objects[0].get_Texture().resource_path)
+    # print(objects[0].get_meta_list())
+    # print(utils.dir_string(objects[0], 'tex'))
+
+
+func update(delta):
+    ##
+    ## Called once per tick
+    ##
+    elapsed_time += delta
+    # print(elapsed_time)
+
+    var cur_focus = Global.Editor.Toolset.get_focus_owner()
+
+    var level = Global.World.levels[Global.World.CurrentLevelId]
+    var viewport = Global.Editor.get_viewport()
+    var master = viewport.get_children()[-1]
+
+    var tile_cam = level.FloorTileCamera
+    var master_cam = master.get_Camera()
+    # print(master_cam.get_global_position())
+    # print(tile_cam.get_global_position())
+    # print(' ')
+
+    # if Input.is_mouse_button_pressed(BUTTON_LEFT):
+    #     print(cur_focus)
+    #     utils.print_ancestors(cur_focus)
+    #     print(" ")
+    pass
+
+func start():
+    ##
+    ## Initialize the mod
+    ## Called immediately after the script is loaded
+    ##
+
+    # Load any external scripts
+    print("Loading utils")
+    utils = load(Global.Root + "scripts/utils.gd").new()
+
+    qutils = load(Global.Root + "scripts/utils.gd").new()
+    qutils.init(self)
+
+    # Add reload callback
+    var reload_mods_button = Global.Editor.get_node("VPartition/MenuBar/MenuAlign/ReloadModsButton")
+    reload_mods_button.connect("pressed", self, "_on_reload")
+
+    # Create the new tool
+    var category = "Settings"
+    var id = "toggle_objects"
+    var name = "Toggle Objects"
+    var icon = Global.Root + "icons/toggle_layers.png"
+
+    var tool_panel = Global.Editor.Toolset.CreateModTool(self, category, id, name, icon)
+    # tool_panel.UsesObjectLibrary = true
+    tool_panel.CreateLabel("Toggle Object Visibility")
+    tool_panel.CreateLabel("Objects")
+
+    # var names = ["All"]
+    # for z_index in layer_names.keys():
+    #     if layers[z_index]:
+    #         names.append(layer_names[z_index])
+
+    # layer_dropdown = tool_panel.CreateDropdownMenu("Layers", names, names[0])
+
+    # var button1 = tool_panel.CreateButton("Hide", Global.Root + "icons/question.png")
+    # button1.connect("pressed", self, "on_click_hide")
+
+    # var button2 = tool_panel.CreateButton("Show", Global.Root + "icons/question.png")
+    # button2.connect("pressed", self, "on_click_show")
+
+    # var button3 = tool_panel.CreateButton("Toggle Background", Global.Root + "icons/question.png")
+    # button3.connect("pressed", self, "toggle_background")
+
+    # var button2 = tool_panel.CreateButton("Randomize Asset", Global.Root + "icons/add.png")
+    # button2.connect("pressed", self, "randomize_asset")
+
+    
