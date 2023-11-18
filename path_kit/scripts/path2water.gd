@@ -225,14 +225,18 @@ func close_section():
     cached_path_data = null
     prev_selected_index = null
     is_open = false
+    section.set_visible(is_open)
 
 
 func open_section():
     ##
     ## Callback function for clicking the path2water button
     ##
-    print('HELLO')
     if is_open:
+        return
+    
+    # If no water, don't open
+    if not get_num_bodies_of_water():
         return
     
     var selected_path = get_selected_path()

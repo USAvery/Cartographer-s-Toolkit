@@ -3,7 +3,7 @@
 ## PathKit v0.2.0
 ## Author: Avery Berg
 ## 
-## Allows the user to simplify the amount of points in a path
+## Allows the user to snap a path to another path
 ##
 
 # Required Global
@@ -41,55 +41,54 @@ func get_paths():
     return cur_level.Pathways.get_children()
 
 
-func get_selected_path():
+func get_selected_paths():
     ##
-    ## Get the selected path
+    ## Get the selected paths
     ##
     var paths = get_paths()
 
+    var selected_paths = []
     for item in get_selected_items():
         if item in paths:
-            return item
+            selected_paths.append(item)
     
-    return null
+    return selected_paths
 
 
-# ___________________Query/Edit Path Functions___________________
+# ___________________Path Transformation Functions___________________
 
-func simplify_focused_path():
-    ##
-    ## Simplify the focused path
-    ##
+func transform_focused_path():
     if not focused_path:
         return
+    
+    var second_path = null
+    for sel_path in get_selected_paths():
+        if sel_path != focused_path:
+            second_path = sel_path
+            break
+    
+    if not second_path:
+        return
+    
+    print('Transforming focused path')
 
-    var edit_points = focused_path.get_GlobalEditPoints()
-    var threshold = 20000.0
-    var new_points = []
+    # Transform the path, but keep the original texture
+    var new_path_data = second_path.Save(true)
+    new_path_data['texture'] = cached_path_data.get('texture')
     
-    for edit_point in edit_points:
-        if not new_points:
-            new_points.append(edit_point)
-            continue
-        
-        if edit_point.distance_squared_to(new_points[-1]) > threshold:
-            new_points.append(edit_point)
-    
-    if not focused_path.loop and new_points[-1] != edit_points[-1]:
-        new_points.append(edit_points[-1])
-    
-    focused_path.SetEditPoints(new_points)
+    focused_path.Load(new_path_data)
+    focused_path.Smooth()
     focused_path.Save()
 
     # Refresh the select tool's highlights
     select_tool.DehighlightSelected()
 
 
-# ___________________Callback Functions___________________
+# ___________________Callback functions___________________
 
 func apply():
     ##
-    ## Exit the simplify and leave the simplification applied
+    ## Exit the path2path section and leave the path2path transform applied
     ##
     print("Apply")
     close_section()
@@ -118,16 +117,15 @@ func change_focused_path():
 
 func cancel():
     ##
-    ## Exit the simplify menu and reset the previously selected path
+    ## Exit the path2path menu and reset the previously selected path
     ##
-    # print("Cancel simplify")
     reset_focused_path()
     close_section()
 
 
 func close_section():
     if is_open:
-        print("close_section")
+        print("path2path: close_section")
     
     focused_path = null
     cached_path_data = null
@@ -137,21 +135,22 @@ func close_section():
 
 func open_section():
     ##
-    ## Callback function for clicking the simplify button
+    ## Callback function for clicking the path2path button
     ##
-    print('simplify: open_section')
+    print('path2path: open_section')
     if is_open:
         return
     
-    var selected_path = get_selected_path()
-    if not selected_path:
+    var selected_paths = get_selected_paths()
+    if selected_paths.size() < 2:
         return
     
-    focused_path = selected_path
-    cached_path_data = selected_path.Save(true)
+    var first_selected_path = selected_paths[0]
+    focused_path = first_selected_path
+    cached_path_data = first_selected_path.Save(true)
 
-    simplify_focused_path()
-    
+    transform_focused_path()
+
     is_open = true
 
 
@@ -166,24 +165,24 @@ func tick(delta):
         return
     
     # If no path is selected, cancel the operation
-    var selected_path = get_selected_path()
-    if not selected_path:
+    var selected_paths = get_selected_paths()
+    if selected_paths.size() < 2:
         cancel()
         return
     
     # If the selected path has changed
-    if focused_path and selected_path != focused_path:
+    if focused_path and selected_paths[0] != focused_path:
         change_focused_path()
     
     # Set the visibility of the simplify menu
     section.set_visible(is_open)
-    
+
 
 func init_ui():
-    # Create the simplify button
-    open_button = utils.create_button("Simplify", _global.Root + "icons/simplify.png")
+    # Create the path2path button
+    open_button = utils.create_button("Path2Path", _global.Root + "icons/ditto.png")
 
-    # Create the simplify submenu
+    # Create the path2path submenu
     section = utils.create_vbox()
 
     # Create and add the "Apply" and "Cancel" buttons hbox
@@ -195,22 +194,22 @@ func init(caller):
     ##
     ## Initialize
     ##
-    print("Initializing simplify.gd")
+    print("Initializing path2path.gd")
 
     # Assign Global reference
     _global = caller._global
     if not _global is Dictionary:
         _global = caller.Global
 
-    print("Loading utils simplify.gd")
+    print("Loading utils for path2path.gd")
 
     # Load any external scripts
     utils = load(_global.Root + "scripts/utils.gd").new()
     
-    # Load the select tool
+    # Load the tool
     select_tool = _global.Editor.Tools["SelectTool"]
 
-    print("Finished initializing simplify.gd")
+    print("Finished initializing path2path.gd")
 
 
 func start():

@@ -16,6 +16,7 @@ var utils = null
 var path2water = null
 var simplify = null
 var grow_and_shrink = null
+var path2path = null
 
 # Globals
 var select_tool = null
@@ -140,7 +141,11 @@ func update(delta):
 
 
 func init_ui():
+    plog('Initializing UI')
+
     var tool_panel = Global.Editor.Toolset.GetToolPanel("SelectTool")
+
+    plog('Initializing UI of subsections')
 
     # Initialize the UI of any external scripts
     for subsec_name in sub_sections.keys():
@@ -153,6 +158,7 @@ func init_ui():
     # Create the path kit section in the select tool's panel
     path_kit_section = utils.create_vbox(tool_panel.Align)
 
+    plog('Adding subsections to path kit section')
     for subsec_name in sub_sections.keys():
         var subsec_obj = sub_sections.get(subsec_name)
 
@@ -180,7 +186,12 @@ func init_ui():
 
     # Add a spacer at the bottom of the select tool's panel
     var spacer = utils.create_spacer(tool_panel, Vector2(0, 100))
+
+    plog('Finished initializing UI')
     # tool_panel.Align.move_child(spacer, tool_panel.Align.get_children().size()-1)
+
+func plog(msg):
+    print('path_kit: ' + str(msg))
 
 
 func start():
@@ -188,20 +199,27 @@ func start():
     ## Initialize the mod
     ## Called immediately after the script is loaded
     ##
-    print("Initializing path kit")
+    plog('Initializing')
 
     # Load any external scripts
+    plog('Loading external scripts')
     utils = load(Global.Root + "scripts/utils.gd").new()
     path2water = load(Global.Root + "scripts/path2water.gd").new()
     simplify = load(Global.Root + "scripts/simplify.gd").new()
     grow_and_shrink = load(Global.Root + "scripts/grow_and_shrink.gd").new()
+    path2path = load(Global.Root + "scripts/path2path.gd").new()
+
+    plog('Building subsections dictionary')
 
     # Load the subsection objects into a dictionary
     sub_sections = {
         'path2water': path2water,
         'simplify': simplify,
-        'grow_and_shrink': grow_and_shrink
+        'grow_and_shrink': grow_and_shrink,
+        'path2path': path2path
     }
+
+    plog('Initializing subsections')
 
     # Initialize any external scripts
     for subsec_name in sub_sections.keys():
@@ -215,6 +233,8 @@ func start():
 
     # Initialize the UI
     init_ui()
+
+    plog('Finished initializing')
 
     # Add the reload callback for testing
     _add_reload_callback()

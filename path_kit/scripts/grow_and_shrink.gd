@@ -182,6 +182,7 @@ func close_section():
     focused_path = null
     cached_path_data = null
     is_open = false
+    section.set_visible(is_open)
 
 
 func open_section():
