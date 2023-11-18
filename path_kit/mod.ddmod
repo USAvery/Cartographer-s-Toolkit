@@ -1,0 +1,8 @@
+{
+	"name": "Path Kit",
+	"unique_id": "Megasploot.PathKit",
+	"version": "0.2.0",
+	"author": "Avery Berg",
+	"description": "Adds more options for manipulating paths in the Select Tool",
+	"dd_version": "1.1.0.0",
+}
