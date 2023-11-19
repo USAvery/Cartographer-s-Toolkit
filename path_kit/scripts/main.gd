@@ -8,8 +8,6 @@
 
 # Required Global
 var script_class = "tool"
-var _global = null
-
 
 # External Scripts
 var utils = null
@@ -19,6 +17,7 @@ var simplify = null
 var grow_and_shrink = null
 var path2path = null
 var shape2path = null
+var path2shape = null
 
 # Globals
 var select_tool = null
@@ -28,9 +27,47 @@ var sub_sections = {}
 
 
 # ___________________Test Functions___________________
+func get_patterns():
+    ##
+    ## Get all the pattern shapes
+    ##
+    # print('get_patterns')
+    var cur_level = Global.World.levels[Global.World.CurrentLevelId]
+    var patterns = []
+
+    # Iterate through the layers
+    for layer in cur_level.PatternShapes.get_children():
+        
+        # Iterate through the pattern shapes
+        for pattern_shape in layer.get_children():
+            patterns.append(pattern_shape)
+    
+    # print('patterns: ' + str(patterns))
+    return patterns
+
+func get_selected_pattern_shape():
+    ##
+    ## Get the selected pattern shape
+    ##
+    # print('get_selected_pattern_shape')
+    var pattern_shapes = get_patterns()
+
+    for item in get_selected_items():
+        if item in pattern_shapes:
+            return item
+    
+    return null
 
 func _on_reload():
     print('\n\n')
+    var sel_shape = get_selected_pattern_shape()
+    if sel_shape:
+        # print(utils.dir_string(sel_shape, 'point'))
+        print(sel_shape.get_polygon())
+    
+    var sel_path = get_selected_path()
+    if sel_path:
+        print(sel_path.points)
 
 
 func _add_reload_callback():
@@ -120,6 +157,11 @@ func update(delta):
     var do_show = can_use_tool()
     path_kit_section.set_visible(do_show)
 
+    # Determine whether each subsection is visible in the path kit
+    for subsec_name in sub_sections.keys():
+        var subsec_obj = sub_sections.get(subsec_name)
+        subsec_obj.open_button.set_visible(subsec_obj.can_use_tool())
+
 
 func init_ui():
     plog('Initializing UI')
@@ -172,6 +214,7 @@ func start():
     grow_and_shrink = load(Global.Root + "scripts/grow_and_shrink.gd").new()
     path2path = load(Global.Root + "scripts/path2path.gd").new()
     shape2path = load(Global.Root + "scripts/shape2path.gd").new()
+    path2shape = load(Global.Root + "scripts/path2shape.gd").new()
 
     plog('Building subsections dictionary')
 
@@ -181,7 +224,8 @@ func start():
         'simplify': simplify,
         'grow_and_shrink': grow_and_shrink,
         'path2path': path2path,
-        'shape2path': shape2path
+        'shape2path': shape2path,
+        'path2shape': path2shape
     }
 
     plog('Initializing subsections')

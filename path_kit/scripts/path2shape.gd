@@ -3,7 +3,7 @@
 ## PathKit v0.2.0
 ## Author: Avery Berg
 ## 
-## Allows the user to snap a shape to a path
+## Allows the user to snap a path to a shape
 ##
 
 # Required Global
@@ -95,19 +95,15 @@ func get_selected_pattern_shape():
 
 # ___________________Path Transformation Functions___________________
 
-func shape2path():
+func path2shape():
     if not focused_path or not focused_shape:
         return
     
-    print('Transforming focused shape')
-    
-    # Make the pattern shape fill the path
-    focused_shape.set_polygon(focused_path.points)
-    
-    # Copy the path's transforms to the shape
-    focused_shape.set_global_position(focused_path.get_global_position())
-    focused_shape.set_global_rotation(focused_path.get_global_rotation())
-    focused_shape.set_global_scale(focused_path.get_global_scale())
+    focused_path.loop = true
+    focused_path.SetEditPoints(focused_shape.get_polygon())
+    focused_path.Smoothness = 0.0
+    focused_path.Smooth()
+    focused_path.Save()
 
     # Refresh the select tool's highlights
     select_tool.DehighlightSelected()
@@ -117,7 +113,7 @@ func shape2path():
 
 func apply():
     ##
-    ## Exit the shape2path section and leave the shape2path transform applied
+    ## Exit the path2shape section and leave the path2shape transform applied
     ##
     print("Apply")
     close_section()
@@ -158,17 +154,16 @@ func reset_focused_shape():
 
 func cancel():
     ##
-    ## Exit the shape2path menu and reset the previously selected path
+    ## Exit the path2shape menu and reset the previously selected path
     ##
-    # reset_focused_path()
-    reset_focused_shape()
     reset_focused_path()
+    reset_focused_shape()
     close_section()
 
 
 func close_section():
     if is_open:
-        print("shape2path: close_section")
+        print("path2shape: close_section")
     
     focused_path = null
     cached_path_data = null
@@ -180,9 +175,9 @@ func close_section():
 
 func open_section():
     ##
-    ## Callback function for clicking the shape2path button
+    ## Callback function for clicking the path2shape button
     ##
-    print('shape2path: open_section')
+    print('path2shape: open_section')
     if is_open:
         return
     
@@ -203,7 +198,7 @@ func open_section():
     cached_shape_data = focused_shape.Save(true)
 
     
-    shape2path()
+    path2shape()
 
     is_open = true
 
@@ -224,7 +219,6 @@ func tick(delta):
         cancel()
         return
     
-    # print('\n\nTICKING IN SHAPE2PATH\n\n')
     # If no path or pattern shape is selected, cancel the operation
     var selected_path = get_selected_path()
     var selected_shape = get_selected_pattern_shape()
@@ -245,10 +239,10 @@ func tick(delta):
 
 
 func init_ui():
-    # Create the shape2path button
-    open_button = utils.create_button("Shape2Path", _global.Root + "icons/ditto.png")
+    # Create the path2shape button
+    open_button = utils.create_button("Path2Shape", _global.Root + "icons/ditto.png")
 
-    # Create the shape2path submenu
+    # Create the path2shape submenu
     section = utils.create_vbox()
 
     # Create and add the "Apply" and "Cancel" buttons hbox
@@ -260,14 +254,14 @@ func init(caller):
     ##
     ## Initialize
     ##
-    print("Initializing shape2path.gd")
+    print("Initializing path2shape.gd")
 
     # Assign Global reference
     _global = caller._global
     if not _global is Dictionary:
         _global = caller.Global
 
-    print("Loading utils for shape2path.gd")
+    print("Loading utils for path2shape.gd")
 
     # Load any external scripts
     utils = load(_global.Root + "scripts/utils.gd").new()
@@ -275,7 +269,7 @@ func init(caller):
     # Load the tool
     select_tool = _global.Editor.Tools["SelectTool"]
 
-    print("Finished initializing shape2path.gd")
+    print("Finished initializing path2shape.gd")
 
 
 func start():

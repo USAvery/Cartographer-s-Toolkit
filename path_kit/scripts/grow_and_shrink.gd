@@ -205,6 +205,11 @@ func open_section():
     is_open = true
 
 
+func can_use_tool():
+    var selected_path = get_selected_path()
+    return bool(selected_path)
+
+
 # ___________________Base Functions___________________
 
 func tick(delta):

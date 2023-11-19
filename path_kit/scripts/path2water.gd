@@ -249,6 +249,12 @@ func open_section():
     is_open = true
 
 
+func can_use_tool():
+    var selected_path = get_selected_path()
+    var num_bodies_of_water = get_num_bodies_of_water()
+    return bool(selected_path and num_bodies_of_water)
+
+
 # ___________________Base Functions___________________
 
 func tick(delta):

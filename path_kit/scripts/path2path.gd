@@ -154,6 +154,12 @@ func open_section():
     is_open = true
 
 
+func can_use_tool():
+    var selected_paths = get_selected_paths()
+    return bool(selected_paths.size() > 1)
+
+
+
 # ___________________Base Functions___________________
 
 func tick(delta):
