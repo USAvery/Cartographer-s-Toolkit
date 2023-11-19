@@ -13,10 +13,12 @@ var _global = null
 
 # External Scripts
 var utils = null
+
 var path2water = null
 var simplify = null
 var grow_and_shrink = null
 var path2path = null
+var shape2path = null
 
 # Globals
 var select_tool = null
@@ -29,27 +31,6 @@ var sub_sections = {}
 
 func _on_reload():
     print('\n\n')
-    # print("Reloading main.gd")
-    # var selected_path = get_selected_path()
-    # if selected_path:
-    # print(utils.dir_string(select_tool, 'high', true, true))
-    #     selected_path.Smooth()
-    # select_tool.DehighlightSelected()
-    # print(select_tool.highlighted)
-    # var selected_path = get_selected_path()
-    # if selected_path:
-    #     print(selected_path)
-    #     var selectable = select_tool.GetSelectable(selected_path)
-    #     select_tool.Highlight(selectable, false)
-        
-    #     # selected_path.Smooth()
-    #     # print(selected_path.get_points().size())
-    #     # print()
-    #     # print(utils.dir_string(selected_path, null, true, true))
-    #     # print(typeof(focused_path.get_points()) == 24)
-    #     # print(len(focused_path.get_points()))
-    # else:
-    #     print('------')
 
 
 func _add_reload_callback():
@@ -151,9 +132,6 @@ func init_ui():
     for subsec_name in sub_sections.keys():
         var subsec_obj = sub_sections.get(subsec_name)
         subsec_obj.init_ui()
-    # path2water.init_ui()
-    # simplify.init_ui()
-    # grow_and_shrink.init_ui()
 
     # Create the path kit section in the select tool's panel
     path_kit_section = utils.create_vbox(tool_panel.Align)
@@ -168,21 +146,6 @@ func init_ui():
 
         # Add the subsection
         path_kit_section.add_child(subsec_obj.section)
-
-    # # Add the path2water button
-    # section.open_button.connect('pressed', self, 'open_section', ['path2water'])
-    # path_kit_section.add_child(path2water.open_button)
-
-    # # Add the path2water section
-    # path_kit_section.add_child(path2water.section)
-
-    # # Add the simplify button
-    # simplify.open_button.connect('pressed', self, 'open_section', ['simplify'])
-    # path_kit_section.add_child(simplify.open_button)
-
-    # # Add the simplify section
-    # path_kit_section.add_child(simplify.section)
-
 
     # Add a spacer at the bottom of the select tool's panel
     var spacer = utils.create_spacer(tool_panel, Vector2(0, 100))
@@ -208,6 +171,7 @@ func start():
     simplify = load(Global.Root + "scripts/simplify.gd").new()
     grow_and_shrink = load(Global.Root + "scripts/grow_and_shrink.gd").new()
     path2path = load(Global.Root + "scripts/path2path.gd").new()
+    shape2path = load(Global.Root + "scripts/shape2path.gd").new()
 
     plog('Building subsections dictionary')
 
@@ -216,7 +180,8 @@ func start():
         'path2water': path2water,
         'simplify': simplify,
         'grow_and_shrink': grow_and_shrink,
-        'path2path': path2path
+        'path2path': path2path,
+        'shape2path': shape2path
     }
 
     plog('Initializing subsections')
@@ -225,8 +190,6 @@ func start():
     for subsec_name in sub_sections.keys():
         var subsec_obj = sub_sections.get(subsec_name)
         subsec_obj.init(self)
-    # path2water.init(self)
-    # simplify.init(self)
 
     # Load the select tool
     select_tool = Global.Editor.Tools["SelectTool"]
