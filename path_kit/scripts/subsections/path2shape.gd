@@ -265,6 +265,9 @@ func init(caller):
 
     # Load any external scripts
     utils = load(_global.Root + "scripts/utils.gd").new()
+
+    # Intitialize any external scripts
+    utils.init(self)
     
     # Load the tool
     select_tool = _global.Editor.Tools["SelectTool"]

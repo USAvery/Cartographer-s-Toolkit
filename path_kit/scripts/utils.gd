@@ -7,7 +7,10 @@
 ##
 
 class_name Utils
+
+# Required Global
 var script_class = "tool"
+var _global = null
 
 
 # ___________________UI Creation Functions___________________
@@ -235,7 +238,7 @@ func get_selected_items():
     ##
     ## Get the selected items
     ##
-    var select_tool = Global.Editor.Tools["SelectTool"]
+    var select_tool = _global.Editor.Tools["SelectTool"]
     var selected_items = select_tool.Selected
     
     return selected_items
@@ -245,7 +248,7 @@ func get_patterns():
     ##
     ## Get all the pattern shapes
     ##
-    var cur_level = Global.World.levels[Global.World.CurrentLevelId]
+    var cur_level = _global.World.levels[_global.World.CurrentLevelId]
     var patterns = []
 
     # Iterate through the layers
@@ -262,7 +265,7 @@ func get_paths():
     ##
     ## Get all the path nodes
     ##
-    var cur_level = Global.World.levels[Global.World.CurrentLevelId]
+    var cur_level = _global.World.levels[_global.World.CurrentLevelId]
     return cur_level.Pathways.get_children()
 
 
@@ -574,6 +577,19 @@ func match_type(numeral: int):
             return "PoolVector3Array"
         26:
             return "PoolColorArray"
+
+
+# ___________________Base Functions___________________
+
+func init(caller):
+    ##
+    ## Initialize the script
+    ##
+
+    # Assign Global reference
+    _global = caller._global
+    if not _global is Dictionary:
+        _global = caller.Global
 
 
 func start():

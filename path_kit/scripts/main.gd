@@ -35,7 +35,11 @@ func _on_reload():
     var sel_path = get_selected_path()
     if sel_path:
         print(sel_path.Save(true).keys())
-        # print(utils.dir_string(sel_path))
+        # print(utils.dir_string(sel_path.get_texture()))
+        var path_width_scale = float(sel_path.get_width()) / float(sel_path.get_texture().get_height())
+        print(path_width_scale)
+        # print(sel_path.Save(true)['width'])
+        # print(sel_path.get_width())
 
 
 func _add_reload_callback():
@@ -217,8 +221,11 @@ func start():
         var subsec_script_path = "scripts/subsections/" + subsec_name + ".gd"
         sub_sections[subsec_name] = load(Global.Root + subsec_script_path).new()
 
+    # Intitialize any external scripts
+    utils.init(self)
+    
+    # Initialize the external subsection scripts
     plog('Initializing subsections')
-    # Initialize any external scripts
     for subsec_name in sub_sections.keys():
         var subsec_obj = sub_sections.get(subsec_name)
         subsec_obj.init(self)

@@ -142,8 +142,11 @@ func open_section():
     focused_path = selected_path
     cached_path_data = selected_path.Save(true)
     
-    # width_slider.set_value(1.0)
-    transform_focused_path()
+
+    var path_width_scale = float(focused_path.get_width()) / float(focused_path.get_texture().get_height())
+    width_slider.set_value(path_width_scale)
+
+    transform_focused_path(path_width_scale)
 
     is_open = true
 
@@ -212,6 +215,9 @@ func init(caller):
 
     # Load any external scripts
     utils = load(_global.Root + "scripts/utils.gd").new()
+
+    # Intitialize any external scripts
+    utils.init(self)
     
     # Load the tool
     select_tool = _global.Editor.Tools["SelectTool"]
