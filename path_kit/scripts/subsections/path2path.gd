@@ -156,8 +156,9 @@ func open_section():
 
 func can_use_tool():
     var selected_paths = get_selected_paths()
-    return bool(selected_paths.size() > 1)
-
+    if selected_paths.size() > 1:
+        return true
+    return false
 
 
 # ___________________Base Functions___________________

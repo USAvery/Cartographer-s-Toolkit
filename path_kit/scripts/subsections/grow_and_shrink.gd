@@ -207,7 +207,9 @@ func open_section():
 
 func can_use_tool():
     var selected_path = get_selected_path()
-    return bool(selected_path)
+    if selected_path:
+        return true
+    return false
 
 
 # ___________________Base Functions___________________

@@ -153,7 +153,9 @@ func open_section():
 
 func can_use_tool():
     var sel_path = get_selected_path()
-    return sel_path != null
+    if sel_path:
+        return true
+    return false
 
 
 # ___________________Base Functions___________________
