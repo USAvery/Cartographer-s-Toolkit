@@ -12,21 +12,26 @@ var script_class = "tool"
 
 # External Scripts
 var utils = null
+var terrain_handlers = []
 
 # Globals
 var terrain_brush = null
 var file_input = null
+var stretch_button = null
 
 var terrain_shaders = {
     'image': null,
     'image_smooth': null,
     'image_alpha': null,
     'image_alpha_smooth': null
-} 
+}
+
+# var terrain_item_list = null
 
 var image_terrain_shader = null
 var image_terrain_smooth_shader = null
 
+var prev_terrain_01 = null
 var prev_path = null
 var prev_smooth_state = false
 
@@ -53,11 +58,6 @@ func load_shader(path):
     return shader
 
 
-func get_selected_terrain_img():
-    var level = get_current_level()
-    return level.Terrain.get_Textures()[0]
-
-
 func get_current_level():
     ##
     ## Get the current level
@@ -65,13 +65,7 @@ func get_current_level():
     return Global.World.GetLevelByID(Global.World.CurrentLevelId)
 
 
-func set_terrain_img(texture):
-    ##
-    ## Set the base terrain image
-    ##
-    var level = get_current_level()
-    level.Terrain.ShaderMaterial.set_shader_param('texture_1', texture)
-
+# ___________________Shader Functions___________________
 
 func set_terrain_shader(shader):
     ##
@@ -80,29 +74,26 @@ func set_terrain_shader(shader):
     var level = get_current_level()
     level.Terrain.ShaderMaterial.set_shader(shader)
 
+    # level.Terrain.normalShader
+    # level.Terrain.smoothShader
+
+
+func reload_default_terrain_shader():
+    print('Reloading default terrain shader')
+    var is_smooth = terrain_brush.get_SmoothBlending()
+    if is_smooth:
+        set_terrain_shader(terrain_shaders['image_smooth'])
+    else:
+        set_terrain_shader(terrain_shaders['image'])
+
 
 func _on_reload():
-    print("Reloaded img_as_terrain mod")
-    # print('\n')
-    # var is_smooth = terrain_brush.get_SmoothBlending()
-    # print(is_smooth)
-    # print(utils.dir_string(level.Terrain))
+    print('Reloaded img_as_terrain mod')
+    print('MAP DATA: ' + str(Global.ModMapData['img_as_terrain']))
+    var tool_panel = Global.Editor.Toolset.GetToolPanel("TerrainBrush")
+    var level = get_current_level()
+    print('\n\n')
 
-
-func on_change_file(path):
-    ##
-    ## Callback function for the image file changing
-    ##
-    print('Changed file! ' + str(path))
-
-    if not path:
-        set_default_shaders()
-
-    var texture = utils.load_tx(path)
-    if not texture:
-        return
-    
-    set_terrain_img(texture)
 
 
 func on_change_smooth_state(is_smooth):
@@ -110,9 +101,6 @@ func on_change_smooth_state(is_smooth):
     ## Callback function for the smooth state being changed
     ##
     print('Changed smooth state')
-
-    if not file_input.get_text():
-        return
 
     if is_smooth:
         set_terrain_shader(terrain_shaders['image_smooth'])
@@ -122,36 +110,27 @@ func on_change_smooth_state(is_smooth):
 
 func load_shaders():
     print('Loading shaders')
+    terrain_shaders['default'] = load_shader(Global.Root + 'shaders/default.shader')
+    terrain_shaders['default_smooth'] = load_shader(Global.Root + 'shaders/default_smooth.shader')
     terrain_shaders['image'] = load_shader(Global.Root + 'shaders/image_terrain.shader')
     terrain_shaders['image_smooth'] = load_shader(Global.Root + 'shaders/image_terrain_smooth.shader')
     terrain_shaders['no_image'] = load_shader(Global.Root + 'shaders/no_image_terrain.shader')
     terrain_shaders['no_image_smooth'] = load_shader(Global.Root + 'shaders/no_image_terrain_smooth.shader')
+    terrain_shaders['test'] = load_shader(Global.Root + 'shaders/test.shader')
 
 
 func update(delta):
     ##
     ## Called once per tick
     ##
-    var cur_path = file_input.get_text()
+    for terrain_handler in terrain_handlers:
+        terrain_handler.tick(delta)
+
     var cur_smooth_state = terrain_brush.get_SmoothBlending()
-
-    if not cur_path:
-        # Reset the base terrain image
-        if prev_path:
-            print("Using selected base terrain image")
-            set_terrain_img(get_selected_terrain_img())
-            prev_path = cur_path
-        return
-
-    if cur_path != prev_path:
-        on_change_file(cur_path)
-        on_change_smooth_state(cur_smooth_state)
-    
     if cur_smooth_state != prev_smooth_state and prev_smooth_state != null:
         on_change_smooth_state(cur_smooth_state)
-    
+
     prev_smooth_state = cur_smooth_state
-    prev_path = cur_path
 
 
 func start():
@@ -159,25 +138,39 @@ func start():
     ## Initialize the mod
     ## Called immediately after the script is loaded
     ##
+    print('MAP DATA: ' + str(Global.ModMapData['img_as_terrain']))
 
     # Load any external scripts
-    print("Loading utils")
+    print('Loading external scripts')
     utils = load(Global.Root + "scripts/utils.gd").new()
+    for i in range(4):
+        terrain_handlers.append(load(Global.Root + "scripts/terrain_handler.gd").new())
 
     # Load the shaders
     load_shaders()
 
     terrain_brush = Global.Editor.Tools["TerrainBrush"]
     var tool_panel = Global.Editor.Toolset.GetToolPanel("TerrainBrush")
-    
 
     # Add reload callback
     var reload_mods_button = Global.Editor.get_node("VPartition/MenuBar/MenuAlign/ReloadModsButton")
     reload_mods_button.connect("pressed", self, "_on_reload")
 
-    
+    # Create the file input
     file_input = utils.create_file_input(tool_panel)
     tool_panel.Align.move_child(file_input.get_parent(), 0)
 
+    # Create the stretch toggle
+    stretch_button = utils.create_checkbutton(tool_panel, 'Stretch')
+    tool_panel.Align.move_child(stretch_button, 1)
+
+    # Initialize external scripts
+    for i in range(terrain_handlers.size()):
+        terrain_handlers[i].init(self, i, file_input, stretch_button)
+
+    # terrain_item_list = tool_panel.Align.get_children()[8].get_children()[0]
     Global.Editor.Toolset.Quickswitch("TerrainBrush")
+
+    on_change_smooth_state(terrain_brush.get_SmoothBlending())
+    # set_terrain_shader(terrain_shaders['image_smooth'])
 

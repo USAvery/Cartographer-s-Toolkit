@@ -57,7 +57,7 @@ func create_line_edit(tool_panel=null):
     ##
     var line_edit = LineEdit.new()
     if tool_panel:
-        tool_panel.get_children()[-1].add_child(line_edit)
+        tool_panel.Align.add_child(line_edit)
     return line_edit
 
 
@@ -67,8 +67,25 @@ func create_hbox(tool_panel=null):
     ##
     var hbox = HBoxContainer.new()
     if tool_panel:
-        tool_panel.get_children()[-1].add_child(hbox)
+        tool_panel.Align.add_child(hbox)
     return hbox
+
+
+func create_vbox(parent=null, children=[]):
+    ##
+    ## Create and return a new VBoxContainer node
+    ##
+    var vbox = VBoxContainer.new()
+    vbox.set_h_size_flags(3)
+    vbox.set_v_size_flags(3)
+
+    if parent:
+        parent.add_child(vbox)
+
+    for child in children:
+        vbox.add_child(child)
+
+    return vbox
 
 
 func create_labeled_dropdown(msg="", options=[], selected=null):
@@ -118,6 +135,21 @@ func create_file_input(tool_panel):
     
     tool_panel.CreateFileSelector("FileSelectorID", img_filter, OS.get_system_dir(OS.SYSTEM_DIR_DESKTOP))
     return tool_panel.Align.get_children()[-1].get_children()[0]
+
+
+func create_checkbutton(tool_panel=null, text=null, checked=false):
+    ##
+    ## Create and return a new CheckButton node
+    ##
+    var checkbutton = CheckButton.new()
+    checkbutton.pressed = checked
+    if text:
+        checkbutton.set_text(text)
+
+    if tool_panel:
+        tool_panel.Align.add_child(checkbutton)
+
+    return checkbutton
 
 
 # ___________________Misc Functions___________________

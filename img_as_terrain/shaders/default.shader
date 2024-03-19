@@ -8,17 +8,11 @@ uniform sampler2D texture_4;
 uniform sampler2D splat;
 uniform float blend_step = 0.04;
 uniform vec2 map_size;
-
 varying vec2 world_uv;
 varying vec2 texture_1_uv;
 varying vec2 texture_2_uv;
 varying vec2 texture_3_uv;
 varying vec2 texture_4_uv;
-
-uniform bool texture_1_stretch;
-uniform bool texture_2_stretch;
-uniform bool texture_3_stretch;
-uniform bool texture_4_stretch;
 
 
 vec2 texture2uv(sampler2D t, vec2 uv)
@@ -29,46 +23,13 @@ vec2 texture2uv(sampler2D t, vec2 uv)
 	return uv;
 }
 
-vec2 texture2uv_stretch(sampler2D t, vec2 uv)
-{
-	ivec2 size = textureSize(t, 0);
-
-	uv.x /= float(map_size.x);
-	uv.y /= float(map_size.y);
-	return uv;
-}
-
 void vertex()
 {
 	world_uv = VERTEX;
-
-    if (texture_1_stretch) {
-        texture_1_uv = texture2uv_stretch(texture_1, world_uv);
-    }
-    else {
-        texture_1_uv = texture2uv(texture_1, world_uv);
-    }
-
-    if (texture_2_stretch) {
-        texture_2_uv = texture2uv_stretch(texture_2, world_uv);
-    }
-    else {
-        texture_2_uv = texture2uv(texture_2, world_uv);
-    }
-
-    if (texture_3_stretch) {
-        texture_3_uv = texture2uv_stretch(texture_3, world_uv);
-    }
-    else {
-        texture_3_uv = texture2uv(texture_3, world_uv);
-    }
-
-    if (texture_4_stretch) {
-        texture_4_uv = texture2uv_stretch(texture_4, world_uv);
-    }
-    else {
-        texture_4_uv = texture2uv(texture_4, world_uv);
-    }
+	texture_1_uv = texture2uv(texture_1, world_uv);
+	texture_2_uv = texture2uv(texture_2, world_uv);
+	texture_3_uv = texture2uv(texture_3, world_uv);
+	texture_4_uv = texture2uv(texture_4, world_uv);
 }
 
 float max4(float v1, float v2, float v3, float v4)
@@ -97,5 +58,4 @@ void fragment()
 	vec3 albedo = blend(t1.rgb, t1.a * s.r, t2.rgb, t2.a * s.g, t3.rgb, t3.a * s.b, t4.rgb, t4.a * s.a);
 
 	COLOR.rgb = albedo;
-	COLOR.a = 1.0;
 }
