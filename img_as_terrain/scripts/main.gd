@@ -92,6 +92,10 @@ func _on_reload():
     print('MAP DATA: ' + str(Global.ModMapData['img_as_terrain']))
     var tool_panel = Global.Editor.Toolset.GetToolPanel("TerrainBrush")
     var level = get_current_level()
+
+    # print(utils.dir_string(level.Terrain))
+    # level.Terrain.set_modulate(Color(1, 0, 0, 1))
+    # print(level.Terrain.self_modulate)
     print('\n\n')
 
 
@@ -114,8 +118,6 @@ func load_shaders():
     terrain_shaders['default_smooth'] = load_shader(Global.Root + 'shaders/default_smooth.shader')
     terrain_shaders['image'] = load_shader(Global.Root + 'shaders/image_terrain.shader')
     terrain_shaders['image_smooth'] = load_shader(Global.Root + 'shaders/image_terrain_smooth.shader')
-    terrain_shaders['no_image'] = load_shader(Global.Root + 'shaders/no_image_terrain.shader')
-    terrain_shaders['no_image_smooth'] = load_shader(Global.Root + 'shaders/no_image_terrain_smooth.shader')
     terrain_shaders['test'] = load_shader(Global.Root + 'shaders/test.shader')
 
 
@@ -164,9 +166,15 @@ func start():
     stretch_button = utils.create_checkbutton(tool_panel, 'Stretch')
     tool_panel.Align.move_child(stretch_button, 1)
 
+    # Create the color palette
+    var color_palette = tool_panel.CreateColorPalette('tint', false, '', [], false, false)
+    tool_panel.Align.move_child(color_palette, 2)
+    color_palette.disconnect('color_changed', terrain_brush, 'ChangeColor')
+    # color_palette.connect('color_changed', self, 'on_color_change')
+
     # Initialize external scripts
     for i in range(terrain_handlers.size()):
-        terrain_handlers[i].init(self, i, file_input, stretch_button)
+        terrain_handlers[i].init(self, i, file_input, stretch_button, color_palette)
 
     # terrain_item_list = tool_panel.Align.get_children()[8].get_children()[0]
     Global.Editor.Toolset.Quickswitch("TerrainBrush")

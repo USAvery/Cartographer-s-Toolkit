@@ -17,6 +17,7 @@ var terrain_brush = null
 var tool_panel = null
 var file_input = null
 var stretch_button = null
+var color_palette = null
 
 var terrain_id = null
 
@@ -70,9 +71,21 @@ func set_stretched(stretched):
     print('Set stretched: ' + str(stretched))
     var level = get_current_level()
     var param_name = 'texture_' + str(terrain_id + 1) + '_stretch'
-    # level.Terrain.normalShader.set_shader_param(param_name, stretched)
-    # level.Terrain.smoothShader.set_shader_param(param_name, stretched)
     level.Terrain.ShaderMaterial.set_shader_param(param_name, stretched)
+
+
+func set_tint(tint_color):
+    ##
+    ## Set whether the terrain tint color
+    ##
+    print('Set tint: ' + str(tint_color))
+    var level = get_current_level()
+    var param_name = 'texture_' + str(terrain_id + 1) + '_tint'
+    level.Terrain.ShaderMaterial.set_shader_param(param_name, tint_color)
+
+
+func get_global_terrain_data():
+    return _global.ModMapData.get('img_as_terrain', {})
 
 
 func get_terrain_data():
@@ -80,9 +93,30 @@ func get_terrain_data():
     return _global.ModMapData.get('img_as_terrain', {}).get(str(terrain_id), {})
 
 
+func _get_cur_data():
+    var cur_data = {
+        'texture_path': file_input.get_text('texture_path', ''),
+        'stretched': stretch_button.pressed,
+        'tint': str2var(var2str(color_palette.color))
+    }
+    return cur_data
+
+
+func _get_prev_data():
+    var terrain_data = get_terrain_data()
+    var prev_data = {
+        'texture_path': terrain_data.get('texture_path', ''),
+        'stretched': terrain_data.get('stretched', false),
+        'tint': str2var(terrain_data.get('tint', var2str(Color(1, 1, 1, 1))))
+    }
+    return prev_data
+
+
 func _load_terrain():
     var texture_path = get_terrain_data().get('texture_path', '')
     var stretched = get_terrain_data().get('stretched', false)
+    var tint_color = str2var(get_terrain_data().get('tint', var2str(Color(1, 1, 1, 1))))
+    var tint_presets = str2var(get_global_terrain_data().get('tint_presets', var2str([])))
 
     if texture_path:
         print('STARTED LOADING TERRAIN')
@@ -90,12 +124,13 @@ func _load_terrain():
         print('FINISHED LOADING TERRAIN')
 
     set_stretched(stretched)
-
-
-func _on_open():
-    print('Opening terrain ' + str(terrain_id))
-    file_input.set_text(get_terrain_data().get('texture_path', ''))
-    stretch_button.pressed = get_terrain_data().get('stretched', false)
+    set_tint(tint_color)
+    
+    # Only load the tint presets once (Instead of loading for each terrain id)
+    var cur_tint_presets = color_palette.Save()
+    if tint_presets and not cur_tint_presets:
+        print('Adding presets: ' + var2str(tint_presets))
+        color_palette.AddPresets(tint_presets)
 
 
 func _reset():
@@ -106,11 +141,16 @@ func _reset():
     # Reset the shader attributes
     set_terrain_img(get_selected_terrain_img())
     set_stretched(false)
+    set_tint(Color(1, 1, 1, 1))
 
     # Reset the mod map data
     _global.ModMapData['img_as_terrain'][str(terrain_id)]['texture_path'] = ''
     _global.ModMapData['img_as_terrain'][str(terrain_id)]['stretched'] = false
+    _global.ModMapData['img_as_terrain'][str(terrain_id)]['tint'] = var2str(Color(1, 1, 1, 1))
+    _global.ModMapData['img_as_terrain']['tint_presets'] = var2str(color_palette.Save())
 
+
+# ___________________Callback functions___________________
 
 func _on_change_file(path) -> void:
     ##
@@ -132,10 +172,32 @@ func _on_change_file(path) -> void:
     set_terrain_img(texture)
     _global.ModMapData['img_as_terrain'][str(terrain_id)]['texture_path'] = path
 
+
 func _on_change_stretch(stretched):
     print('Stretch changed to ' + str(stretched))
     set_stretched(stretched)
     _global.ModMapData['img_as_terrain'][str(terrain_id)]['stretched'] = stretched
+
+
+func _on_change_tint(tint_color):
+    print('Tint color changed to ' + str(tint_color))
+    set_tint(tint_color)
+    _global.ModMapData['img_as_terrain'][str(terrain_id)]['tint'] = var2str(tint_color)
+    print('Saving tint presets: ' + var2str(color_palette.Save()))
+    _global.ModMapData['img_as_terrain']['tint_presets'] = var2str(color_palette.Save())
+
+
+func _on_open():
+    print('Opening terrain ' + str(terrain_id))
+    var texture_path = get_terrain_data().get('texture_path', '')
+    var stretched = get_terrain_data().get('stretched', false)
+    var tint_color = str2var(get_terrain_data().get('tint', var2str(Color(1, 1, 1, 1))))
+
+    file_input.set_text(texture_path)
+    stretch_button.pressed = stretched
+    print('Setting tint color to: ' + str(tint_color))
+    color_palette.SetColor(tint_color, false)
+
 
 # ___________________Base Functions___________________
 
@@ -149,31 +211,37 @@ func tick(delta) -> void:
         _load_terrain()
         terrain_loaded = true
 
+    # If not using the terrain brush
     if terrain_brush != _global.Editor.ActiveTool:
         was_open = false
         return
 
+    # If this terrain ID isn't selected
     if terrain_brush.get_TerrainID() != terrain_id:
         was_open = false
         return
 
-    # print('is open')
+    # If just opened this terrain ID
     if not was_open:
         _on_open()
         was_open = true
         return
 
-    var terrain_data = get_terrain_data()
-
-    var cur_path = file_input.get_text('texture_path', '')
-    var prev_path = terrain_data.get('texture_path', '')
-    var cur_stretched = stretch_button.pressed
-    var prev_stretched = terrain_data.get('stretched', false)
-    # var cur_smooth_state = terrain_brush.get_SmoothBlending()
+    # Compare the current and previous data
+    var cur_data = _get_cur_data()
+    var prev_data = _get_prev_data()
 
     # Change the stretched attribute (User clicked the stretch button)
-    if cur_stretched != prev_stretched:
-        _on_change_stretch(cur_stretched)
+    if cur_data['stretched'] != prev_data['stretched']:
+        _on_change_stretch(cur_data['stretched'])
+    
+    # Change the terrain tint color (User changed the tint color)
+    if cur_data['tint'] != prev_data['tint']:
+        _on_change_tint(cur_data['tint'])
+    
+    # Handle changes to the terrain image path
+    var cur_path = cur_data['texture_path']
+    var prev_path = prev_data['texture_path']
 
     if not cur_path:
         # Reset the terrain (User cleared the file input)
@@ -196,7 +264,7 @@ func tick(delta) -> void:
     was_open = true
 
 
-func init(caller, index, file_node, stretch_node):
+func init(caller, index, file_node, stretch_node, color_palette_node):
     ##
     ## Initialize
     ##
@@ -210,6 +278,7 @@ func init(caller, index, file_node, stretch_node):
     terrain_id = index
     file_input = file_node
     stretch_button = stretch_node
+    color_palette = color_palette_node
 
     print('Loading utils for terrain_handler.gd')
 

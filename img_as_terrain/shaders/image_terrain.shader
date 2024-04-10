@@ -20,6 +20,11 @@ uniform bool texture_2_stretch;
 uniform bool texture_3_stretch;
 uniform bool texture_4_stretch;
 
+uniform vec4 texture_1_tint;
+uniform vec4 texture_2_tint;
+uniform vec4 texture_3_tint;
+uniform vec4 texture_4_tint;
+
 
 vec2 texture2uv(sampler2D t, vec2 uv)
 {
@@ -32,7 +37,6 @@ vec2 texture2uv(sampler2D t, vec2 uv)
 vec2 texture2uv_stretch(sampler2D t, vec2 uv)
 {
 	ivec2 size = textureSize(t, 0);
-
 	uv.x /= float(map_size.x);
 	uv.y /= float(map_size.y);
 	return uv;
@@ -90,10 +94,10 @@ vec3 blend(vec3 t1, float h1, vec3 t2, float h2, vec3 t3, float h3, vec3 t4, flo
 void fragment()
 {
 	vec4 s = texture(splat, world_uv / map_size);
-	vec4 t1 = texture(texture_1, texture_1_uv);
-	vec4 t2 = texture(texture_2, texture_2_uv);
-	vec4 t3 = texture(texture_3, texture_3_uv);
-	vec4 t4 = texture(texture_4, texture_4_uv);
+	vec4 t1 = texture(texture_1, texture_1_uv) * texture_1_tint;
+	vec4 t2 = texture(texture_2, texture_2_uv) * texture_2_tint;
+	vec4 t3 = texture(texture_3, texture_3_uv) * texture_3_tint;
+	vec4 t4 = texture(texture_4, texture_4_uv) * texture_4_tint;
 	vec3 albedo = blend(t1.rgb, t1.a * s.r, t2.rgb, t2.a * s.g, t3.rgb, t3.a * s.b, t4.rgb, t4.a * s.a);
 
 	COLOR.rgb = albedo;
